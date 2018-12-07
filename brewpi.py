@@ -76,6 +76,7 @@ import pinList
 import expandLogMessage
 import BrewPiProcess
 from backgroundserial import BackGroundSerial
+from brewmon import BrewMon
 
 
 # Settings will be read from controller, initialize with same defaults as controller
@@ -333,6 +334,20 @@ def resumeLogging():
     else:
         return {'status': 1, 'statusMessage': "Logging was not paused."}
 
+
+def initInfluxDb():
+    use_influx_db = bool(config.get('useInfluxDb', False))
+    if not use_influx_db:
+        logMessage("InfluxDB disabled")
+        return None
+    udp = bool(config.get('influxDbUdp', True))
+    host = config.get('influxDbHost', 'influxdb')
+    port = config.get('influxDbPort', 4444)
+    database = config.get('influxDbDatabase', 'brewmon')
+    logMessage("Publish metrics to InfluxDB " + host + ":" + str(port) + "/" + database + " UDP" if udp else " TCP")
+    return BrewMon(host=host, port=port, udp=udp, database=database, batch_size=1)
+
+
 # bytes are read from nonblocking serial into this buffer and processed when the buffer contains a full line.
 ser = util.setupSerial(config, time_out=0)
 
@@ -437,6 +452,8 @@ def renameTempKey(key):
         "s": "State",
         "t": "Time"}
     return rename.get(key, key)
+
+influxDb = initInfluxDb()
 
 while run:
     if config['dataLogging'] == 'active':
@@ -778,6 +795,8 @@ while run:
 
                         csvFile.close()
                         shutil.copyfile(localCsvFileName, wwwCsvFileName)
+                        if influxDb:
+                            influxDb.publish_line(config['beerName'], lineToWrite)
                     elif line[0] == 'D':
                         # debug message received, should already been filtered out, but print anyway here.
                         logMessage("Finding a log message here should not be possible, report to the devs!")

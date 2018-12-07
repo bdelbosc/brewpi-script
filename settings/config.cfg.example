@@ -3,6 +3,8 @@
 
 # scriptPath = /home/brewpi/
 # wwwPath = /var/www/
+# # When using nginx
+# wwwPath = /var/www/html
 # port = /dev/ttyACM0
 # altport = /dev/ttyACM1
 # boardType = leonardo
@@ -23,3 +25,9 @@
 # socketPort=6332
 # socketHost=127.0.0.1
 
+# In addition to CSV and JSON file storage, persists metrics into InfluxDB database
+# useInfluxDb = False
+# influxDbHost = influxdb
+# influxDbPort = 4444
+# influxDbUdp = True
+# influxDbDatabase = brewmon
